@@ -1,4 +1,4 @@
-FROM rust:1.76-bullseye as builder
+FROM rust:1.76-bookworm as builder
 
 WORKDIR /fiber
 
@@ -11,7 +11,7 @@ RUN cargo build --release
 
 
 # Build the final image
-FROM debian:bullseye-slim
+FROM debian:bookworm-slim
 LABEL maintainer="Flouse" \
       version="0.0.0" \
       description="Fiber Network Node"
@@ -56,6 +56,7 @@ STOPSIGNAL SIGINT
 
 EXPOSE 8227 8228
 
+# Set the entrypoint to Tini, See https://github.com/krallin/tini
 ENTRYPOINT [ "tini", "--" ]
 CMD [ "/bin/fnn", "--version" ]
 
