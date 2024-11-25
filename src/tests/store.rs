@@ -1,4 +1,6 @@
 use crate::fiber::config::AnnouncedNodeName;
+use crate::fiber::config::DEFAULT_TLC_EXPIRY_DELTA;
+use crate::fiber::config::MAX_PAYMENT_TLC_EXPIRY_LIMIT;
 use crate::fiber::graph::ChannelInfo;
 use crate::fiber::graph::NetworkGraphStateStore;
 use crate::fiber::graph::NodeInfo;
@@ -8,6 +10,7 @@ use crate::fiber::history::TimedResult;
 use crate::fiber::network::SendPaymentData;
 use crate::fiber::tests::test_utils::gen_rand_public_key;
 use crate::fiber::tests::test_utils::gen_sha256_hash;
+use crate::fiber::tests::test_utils::generate_store;
 use crate::fiber::types::ChannelAnnouncement;
 use crate::fiber::types::Hash256;
 use crate::fiber::types::NodeAnnouncement;
@@ -220,7 +223,8 @@ fn test_store_payment_session() {
         amount: 100,
         payment_hash,
         invoice: None,
-        final_htlc_expiry_delta: Some(100),
+        final_tlc_expiry_delta: DEFAULT_TLC_EXPIRY_DELTA,
+        tlc_expiry_limit: MAX_PAYMENT_TLC_EXPIRY_LIMIT,
         timeout: Some(10),
         max_fee_amount: Some(1000),
         max_parts: None,
@@ -228,6 +232,7 @@ fn test_store_payment_session() {
         udt_type_script: None,
         preimage: None,
         allow_self_payment: false,
+        dry_run: false,
     };
     let payment_session = PaymentSession::new(payment_data.clone(), 10);
     store.insert_payment_session(payment_session.clone());
@@ -239,10 +244,7 @@ fn test_store_payment_session() {
 
 #[test]
 fn test_store_payment_history() {
-    let dir = tempdir().unwrap();
-    let path = dir.path().join("payment_history_store");
-    let mut store = Store::new(path);
-
+    let mut store = generate_store();
     let pubkey = gen_rand_public_key();
     let target = gen_rand_public_key();
     let result = TimedResult {
