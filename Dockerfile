@@ -5,7 +5,7 @@ WORKDIR /fiber
 RUN apt-get update && \
     apt-get install -y clang
 
-# TODO: Multi-stage Build Cache
+# Build the application
 COPY . .
 RUN cargo build --release
 
@@ -23,6 +23,7 @@ RUN apt-get update && apt-get upgrade -y \
     tini \
     curl \
     gnupg \
+    clang \
  && apt clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # add ckb-cli into the docker image
@@ -42,21 +43,27 @@ RUN cd /tmp \
  && cp ckb-cli_${CKB_CLI_VERSION}_x86_64-unknown-linux-gnu/ckb-cli /bin/ckb-cli \
  && rm -rf /tmp \
  && chmod 755 /bin/ckb-cli
-
+ 
 COPY --from=builder /fiber/target/release/fnn /bin/fnn
+# TODO: copy ['libclang.so', 'libclang-*.so', 'libclang.so.*', 'libclang-*.so.*']
+# COPY --from=builder \
+#   /usr/lib/x86_64-linux-gnu/libssl.so.* \
+#   /usr/lib/x86_64-linux-gnu/libcrypto.so.* \
+#   /usr/lib/x86_64-linux-gnu/
 
 # System accounts (-r flag) are specifically designed for running services/daemons
-RUN useradd -r fiber
+RUN useradd -r fiber --home /fiber
 USER fiber
+WORKDIR /fiber
+ENV BASE_DIR /fiber/.fiber-node
 
-STOPSIGNAL SIGINT
-
-# TODO: add volume
 # VOLUME /fiber-data
+VOLUME ["/fiber/.fiber-node"]
 
 EXPOSE 8227 8228
+STOPSIGNAL SIGINT
 
-# Set the entrypoint to Tini, See https://github.com/krallin/tini
+# Set the entrypoint to https://github.com/krallin/tini
 ENTRYPOINT [ "tini", "--" ]
 CMD [ "/bin/fnn", "--version" ]
 
