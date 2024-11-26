@@ -13,7 +13,6 @@ RUN cargo build --release
 # Build the final image
 FROM debian:bookworm-slim
 LABEL maintainer="Flouse" \
-      version="0.0.0" \
       description="Fiber Network Node"
 
 # Upgrade all packages and install dependencies
