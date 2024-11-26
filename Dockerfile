@@ -1,14 +1,25 @@
-FROM rust:1.76-slim-bookworm as builder
-
-WORKDIR /fiber
+FROM rust:1.76-bookworm AS base
 
 RUN apt-get update && \
     apt-get install -y clang
 
-# Build the application
+WORKDIR /fiber
 COPY . .
-RUN cargo build --release
 
+########################################################################
+
+FROM base AS builder
+# Build the application
+RUN lscpu && cargo build --release
+
+########################################################################
+
+FROM base AS builder-portable
+# PORTABLE=1: produce more portable code, which might be less optimized
+ENV PORTABLE=1
+RUN PORTABLE=1 cargo build --release
+
+########################################################################
 
 # Build the final image
 FROM debian:bookworm-slim
@@ -22,7 +33,6 @@ RUN apt-get update && apt-get upgrade -y \
     tini \
     curl \
     gnupg \
-    clang \
  && apt clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # add ckb-cli into the docker image
@@ -44,6 +54,7 @@ RUN cd /tmp \
  && chmod 755 /bin/ckb-cli
  
 COPY --from=builder /fiber/target/release/fnn /bin/fnn
+COPY --from=builder-portable /fiber/target/release/fnn /bin/fnn-portable
 # TODO: copy ['libclang.so', 'libclang-*.so', 'libclang.so.*', 'libclang-*.so.*']
 # COPY --from=builder \
 #   /usr/lib/x86_64-linux-gnu/libssl.so.* \
