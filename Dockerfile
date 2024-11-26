@@ -14,10 +14,10 @@ RUN lscpu && cargo build --release
 
 ########################################################################
 
-FROM base AS builder-portable
-# PORTABLE=1: produce more portable code, which might be less optimized
-ENV PORTABLE=1
-RUN PORTABLE=1 cargo build --release
+# FROM base AS builder-portable
+# # PORTABLE=1: produce more portable code, which might be less optimized
+# ENV PORTABLE=1
+# RUN PORTABLE=1 cargo build --release
 
 ########################################################################
 
@@ -54,7 +54,7 @@ RUN cd /tmp \
  && chmod 755 /bin/ckb-cli
  
 COPY --from=builder /fiber/target/release/fnn /bin/fnn
-COPY --from=builder-portable /fiber/target/release/fnn /bin/fnn-portable
+# COPY --from=builder-portable /fiber/target/release/fnn /bin/fnn-portable
 # TODO: copy ['libclang.so', 'libclang-*.so', 'libclang.so.*', 'libclang-*.so.*']
 # COPY --from=builder \
 #   /usr/lib/x86_64-linux-gnu/libssl.so.* \
