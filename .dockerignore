@@ -1,0 +1,6 @@
+# Ignore build artifacts
+target/
+
+# TODO: remove this
+# ignore Dockerfile while debugging -> `docker build . -t fnn:20241126 -f ./Dockerfile`
+Dockerfile
