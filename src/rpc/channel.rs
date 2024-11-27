@@ -270,6 +270,8 @@ pub struct GetPaymentCommandResult {
     pub last_updated_at: u64,
     /// The error message if the payment failed
     pub failed_error: Option<String>,
+    /// fee paid for the payment
+    pub fee: u128,
 }
 
 #[serde_as]
@@ -285,9 +287,13 @@ pub(crate) struct SendPaymentCommandParams {
     /// the hash to use within the payment's HTLC
     payment_hash: Option<Hash256>,
 
-    /// the htlc expiry delta should be used to set the timelock for the final hop
+    /// the TLC expiry delta should be used to set the timelock for the final hop, in milliseconds
     #[serde_as(as = "Option<U64Hex>")]
-    final_htlc_expiry_delta: Option<u64>,
+    final_tlc_expiry_delta: Option<u64>,
+
+    /// the TLC expiry limit for the whole payment, in milliseconds
+    #[serde_as(as = "Option<U64Hex>")]
+    tlc_expiry_limit: Option<u64>,
 
     /// the encoded invoice to send to the recipient
     invoice: Option<String>,
@@ -312,6 +318,11 @@ pub(crate) struct SendPaymentCommandParams {
 
     /// allow self payment, default is false
     allow_self_payment: Option<bool>,
+
+    /// dry_run for payment, used for check whether we can build valid router and the fee for this payment,
+    /// it's useful for the sender to double check the payment before sending it to the network,
+    /// default is false
+    dry_run: Option<bool>,
 }
 
 /// RPC module for channel management.
@@ -618,7 +629,8 @@ where
                     target_pubkey: params.target_pubkey,
                     amount: params.amount,
                     payment_hash: params.payment_hash,
-                    final_htlc_expiry_delta: params.final_htlc_expiry_delta,
+                    final_tlc_expiry_delta: params.final_tlc_expiry_delta,
+                    tlc_expiry_limit: params.tlc_expiry_limit,
                     invoice: params.invoice.clone(),
                     timeout: params.timeout,
                     max_fee_amount: params.max_fee_amount,
@@ -626,6 +638,7 @@ where
                     keysend: params.keysend,
                     udt_type_script: params.udt_type_script.clone().map(|s| s.into()),
                     allow_self_payment: params.allow_self_payment.unwrap_or(false),
+                    dry_run: params.dry_run.unwrap_or(false),
                 },
                 rpc_reply,
             ))
@@ -636,6 +649,7 @@ where
             created_at: response.created_at,
             last_updated_at: response.last_updated_at,
             failed_error: response.failed_error,
+            fee: response.fee,
         })
     }
 
@@ -655,6 +669,7 @@ where
             last_updated_at: response.last_updated_at,
             created_at: response.created_at,
             failed_error: response.failed_error,
+            fee: response.fee,
         })
     }
 }
